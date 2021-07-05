@@ -1,5 +1,5 @@
 # gulp-default
-Default build GULP
+Ready-made assembly
 
 ## Installation commands
 ```
