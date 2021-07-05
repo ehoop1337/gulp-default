@@ -1,4 +1,4 @@
-var gulp       = require('gulp'), // Подключаем Gulp
+const gulp       = require('gulp'), // Подключаем Gulp
 	sass         = require('gulp-sass')(require('sass')), //Подключаем Sass пакет,
 	browserSync  = require('browser-sync'), // Подключаем Browser Sync
 	concat       = require('gulp-concat'), // Подключаем gulp-concat (для конкатенации файлов)
@@ -14,26 +14,39 @@ var gulp       = require('gulp'), // Подключаем Gulp
 
 gulp.task('csslibs-to-basemincss', function() {
 	return gulp.src('app/libs/css/**/*.css')
-		.pipe(concat('base.css'))
-		.pipe(cssnano())
-		.pipe(rename({suffix: '.min'}))
-		.pipe(gulp.dest('app/css'));
+		.pipe(concat('bundle.css'))
+		.pipe(gulp.dest('./app/css/'));
+		// .pipe(cssnano())
+		// .pipe(rename({suffix: '.min'}))
+		// .pipe(gulp.dest('./app/css/'));
 });
 
 gulp.task('jslibs-to-baseminjs', function() {
 	return gulp.src('app/libs/js/**/*.js')
-		.pipe(concat('base.js'))
-		.pipe(uglify())
-		.pipe(rename({suffix: '.min'}))
-		.pipe(gulp.dest('app/js'));
+		.pipe(concat('bundle.js'))
+		.pipe(gulp.dest('./app/js/'));
+		// .pipe(uglify())
+		// .pipe(rename({suffix: '.min'}))
+		// .pipe(gulp.dest('./app/js/'));
 });
 
-// Преобразуем SCSS в CSS, ставим префиксы, перемещаем в папку app/css, следим за изменениями
+// Минимизируем JS
+// gulp.task('js-to-minjs', function() {
+// 	return gulp.src('./app/js/**/*.js')
+// 		.pipe(uglifyjs())
+// 		.pipe(rename({suffix: '.min'}))
+// 		.pipe(gulp.dest('./dist/js/'))
+// });
+
+// Преобразуем SCSS в CSS, ставим префиксы, перемещаем в папку app/css
 gulp.task('sсss-to-css', function() {
-	return gulp.src('app/scss/**/*.scss')
+	return gulp.src('./app/scss/**/*.scss')
 		.pipe(sass())
 		.pipe(autoprefixer(['last 15 versions', '> 1%', 'ie 8', 'ie 7'], { cascade: true }))
-		.pipe(gulp.dest('app/css'))
+		.pipe(gulp.dest('./app/css/'))
+		.pipe(cssnano())
+		.pipe(rename({suffix: '.min'}))
+		.pipe(gulp.dest('./app/css/'))
 });
 
 
@@ -91,21 +104,26 @@ gulp.task(
 
 gulp.task('img', function() {
 	return gulp.src('app/img/**/*')
-		.pipe(cache(imagemin({
-			interlaced: true,
-			progressive: true,
-			svgoPlugins: [{removeViewBox: false}],
-			use: [pngquant()]
-		})))
-		.pipe(gulp.dest('dist/img'));
+		.pipe(cache(imagemin([
+		    imagemin.gifsicle({interlaced: true}),
+		    imagemin.mozjpeg({quality: 75, progressive: true}),
+		    imagemin.optipng({optimizationLevel: 5, }),
+		    imagemin.svgo({
+		        plugins: [
+		            {removeViewBox: true},
+		            {cleanupIDs: false}
+		        ]
+		    })
+		])))
+		.pipe(gulp.dest('./dist/img/'));
 });
 
 gulp.task(
 	'prebuild', async function() {
-		var buildCss = gulp.src('app/css/**/*').pipe(gulp.dest('dist/css'));
-		var buildFonts = gulp.src('app/fonts/**/*').pipe(gulp.dest('dist/fonts'));
-		var buildJs = gulp.src('app/js/**/*').pipe(gulp.dest('dist/js'));
-		var buildHtml = gulp.src('app/*.html').pipe(gulp.dest('dist'));
+		var buildCss = gulp.src('app/css/**/*').pipe(gulp.dest('./dist/css/'));
+		var buildFonts = gulp.src('app/fonts/**/*').pipe(gulp.dest('./dist/fonts/'));
+		var buildJs = gulp.src('app/js/**/*').pipe(gulp.dest('./dist/js/'));
+		var buildHtml = gulp.src('app/*.html').pipe(gulp.dest('./dist/'));
 	}
 );
 
@@ -113,9 +131,11 @@ gulp.task(
 	'build', 
 	gulp.parallel(
 		'clean', 
-		'csslibs-to-basemincss',
+		//'js-to-minjs',
 		'jslibs-to-baseminjs',
+		'csslibs-to-basemincss',
 		'sсss-to-css',
+		'img',
 		'prebuild'
 	)
 );
